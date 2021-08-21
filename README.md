@@ -6,10 +6,10 @@ TODO
 
 - [x] Elements
 - [x] Empty values
+- [x] Strings
+- [ ] Numbers: Integers
 - [ ] Arrays
 - [ ] Objects
-- [ ] Numbers: Integers
-- [ ] Strings: Unquoted
 
 Non-Goal
 
