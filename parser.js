@@ -1,151 +1,194 @@
+const util = require("util");
+
 const State = {
   input: "",
-  output: undefined,
-  position: -1,
-  char: undefined
-}
+  position: 0,
+};
 
 // const values = ["Array", "Object", "Number", "true", "false", "null"]
 const tokens = {
-  arrayStart: '[',
-  arrayEnd: ']',
-  objectStart: '{',
-  objectEnd: '}',
+  arrayStart: "[",
+  arrayEnd: "]",
+  objectStart: "{",
+  objectEnd: "}",
   stringDelimiter: '"',
   digits: [..."0123456789"],
   true: "true",
   false: "false",
-  null: "null"
-}
+  null: "null",
+  whiteSpace: [" ", "\n", "\r", "\t"],
+  comma: ",",
+};
 
 function parse(jsonStr) {
-  let s = {...State, ...{ input: jsonStr }}
-  advance(s);
-  parseValue(s);
-  return s.output;
+  let s = { ...State, ...{ input: jsonStr } };
+  return parseElement(s);
+}
+
+// Element: ws value ws
+function parseElement(s) {
+  log("parseElement", char(s), s);
+  consumeWhiteSpace(s);
+  const out = parseValue(s);
+  consumeWhiteSpace(s);
+  return out;
 }
 
 // Array, Object, String, Number, True, False, Null
 function parseValue(s) {
-  if (s.char === tokens.arrayStart) {
-    s.output = parseArray(s);
-    return s;
+  let out;
+  if (char(s) === tokens.arrayStart) {
+    out = parseArray(s);
+  } else if (char(s) === tokens.objectStart) {
+    out = parseObject(s);
+  } else if (char(s) === tokens.stringDelimiter) {
+    out = parseString(s);
+  } else if (tokens.digits.includes(char(s))) {
+    out = parseNumber(s);
+  } else if (tokens.true.startsWith(char(s))) {
+    consumeToken(s, tokens.true);
+    out = true;
+  } else if (tokens.false.startsWith(char(s))) {
+    consumeToken(s, tokens.false);
+    out = false;
+  } else if (tokens.null.startsWith(char(s))) {
+    consumeToken(s, tokens.null);
+    out = null;
+  } else {
+    bail(s, "parseValue");
   }
-  if (s.char === tokens.objectStart) {
-    s.output = parseObject(s);
-    return s;
-  }
-  if (s.char === tokens.stringDelimiter) {
-    s.output = parseString(s);
-    return s;
-  }
-  if (tokens.digits.includes(s.char)) {
-    s.output = parseNumber(s);
-    return s;
-  }
-  if (tokens.true.startsWith(s.char)) {
-    parseToken(s, tokens.true);
-    s.output = true
-    return s;
-  }
-  if (tokens.false.startsWith(s.char)) {
-    parseToken(s, tokens.false);
-    s.output = false
-    return s;
-  }
-  if (tokens.null.startsWith(s.char)) {
-    parseToken(s, tokens.null);
-    s.output = null
-    return s;
-  }
-  bail(s);
+  return out;
 }
 
 function parseArray(s) {
-  if (s.char !== tokens.arrayStart) bail(s);
+  log("parseArray", char(s), s);
+  if (char(s) !== tokens.arrayStart) bail(s, "parseArray start");
   advance(s);
-  
-  let array = []
-  
-  // TODO
-  
-  if (s.char !== tokens.arrayEnd) bail(s);
+  consumeWhiteSpace(s);
+
+  const out = [];
+
+  // Empty: '[' ws ']'
+  if (char(s) === tokens.arrayEnd) {
+    advance(s);
+    return out;
+  }
+
+  // One or Many: [' elements ']'
+
+  // One: element
+  out.push(parseElement(s));
+
+  log("parseArray", out, char(s));
+
+  // Many: element ',' elements
+  while (char(s) === tokens.comma) {
+    log("parseArray while -> ", char(s));
+    advance(s);
+    out.push(parseElement(s));
+  }
+
+  if (char(s) !== tokens.arrayEnd) bail(s, "parseArray end");
   advance(s);
-  return array;
+
+  return out;
 }
 
 function parseObject(s) {
-  if (s.char !== tokens.objectStart) bail(s);
+  if (char(s) !== tokens.objectStart) bail(s, "parseObject");
   advance(s);
-  
-  let object = {}
-  
+
+  let object = {};
+
   // TODO
-  
-  if (s.char !== tokens.objectEnd) bail(s);
+
+  if (char(s) !== tokens.objectEnd) bail(s, "parseObject");
   advance(s);
   return object;
 }
 
 function parseString(s) {
-  if (s.char !== tokens.stringDelimiter) bail(s);
+  if (char(s) !== tokens.stringDelimiter) bail(s, "parseString");
   advance(s);
-  
-  let string = ""
-  
+
+  let string = "";
+
   // TODO
-  
-  if (s.char !== tokens.stringDelimiter) bail(s);
+
+  if (char(s) !== tokens.stringDelimiter) bail(s, "parseString");
   advance(s);
-  
+
   return string;
 }
 
 function parseNumber(s) {
-  if (!tokens.digits.includes(s.char)) bail(s);
+  log("parseNumber", char(s), s);
 
-  let number = Number(s.char)
-  
-  // TODO  
-  
-  return number;
+  if (!tokens.digits.includes(char(s))) bail(s, "parseNumber");
+
+  let out = Number(char(s));
+
+  advance(s);
+
+  // TODO: while
+
+  log("parseNumber", { out, s });
+
+  return out;
 }
 
-function parseToken(s, token) {
-  for (char of token) {
-    if (char === s.char) {
+function consumeToken(s, token) {
+  for (c of token) {
+    if (c === char(s)) {
       // TODO: Handle eof gracefully
       advance(s);
-    }
-    else {
-      bail(s)
+    } else {
+      bail(s);
     }
   }
-  return token
+  return token;
 }
 
 // Helpers
+function char(s) {
+  log("char", s);
+  return s.input[s.position];
+}
+
 function advance(s) {
+  // TODO don't advance after eol
+  log("advance: before", char(s), s);
   s.position++;
-  s.char = s.input[s.position]
-  return s.char
+  log("advance: after", char(s), s);
+  return char(s);
+}
+
+function consumeWhiteSpace(s) {
+  while (tokens.whiteSpace.includes(char(s))) {
+    advance(s);
+  }
 }
 
 function peek(s) {
-  // TODO handle end of string
-  return s.input[s.position+1];
+  // log("peek", s, s.position + 1);
+  return s.input[s.position + 1];
 }
 
-function hasMore(s) {
-  return s.index < s.input.length - 1
-  // TODO handle end of string
-  return s.input[s.position+1];
+// function hasMore(s) {
+//   return s.index < s.input.length - 1;
+// }
+
+function bail(s, parseFn) {
+  throw `ERROR: Unexpected char '${char(s)}' at position '${
+    s.position
+  }' while parsing ${parseFn}`;
 }
 
-function bail(s) {
-  throw `ERROR: Unexpected char '${s.char}' at position ${s.position}`;
+// Debuggin
+function log() {
+  // console.log.apply(console, arguments);
 }
 
 module.exports = {
-  parse
-}
+  parse,
+};
