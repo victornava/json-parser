@@ -1,4 +1,3 @@
 #!/usr/bin/env bash
 
 clear && node parser.test.js
-
