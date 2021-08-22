@@ -131,7 +131,6 @@ function parseString(s) {
 }
 
 function parseNumber(s) {
-  const onenineDigits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
   let out = "";
 
   // Maybe negative number
