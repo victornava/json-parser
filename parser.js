@@ -1,19 +1,14 @@
-const util = require("util");
-
-const State = {
-  input: "",
-  position: 0,
-};
-
+// Top level parse function
 function parse(jsonStr) {
-  // log(" in:", jsonStr);
-  let s = { ...State, ...{ input: jsonStr } };
+  // Parser state
+  let s = {
+    input: jsonStr,
+    position: 0,
+  };
   return parseElement(s);
 }
 
-// Element: ws value ws
 function parseElement(s) {
-  log("Element", xray(s));
   consumeWhiteSpace(s);
   const out = parseValue(s);
   consumeWhiteSpace(s);
@@ -21,7 +16,6 @@ function parseElement(s) {
 }
 
 function parseValue(s) {
-  log("Value", xray(s));
   const c = char(s);
   if (c === "[") return parseArray(s);
   if (c === "{") return parseObject(s);
@@ -34,7 +28,6 @@ function parseValue(s) {
 }
 
 function parseArray(s) {
-  log("Array in:", xray(s));
   if (char(s) !== "[") bail(s, "parseArray start");
   advance(s);
   consumeWhiteSpace(s);
@@ -44,7 +37,6 @@ function parseArray(s) {
   // Empty: '[' ws ']'
   if (char(s) === "]") {
     advance(s);
-    log("Array out:", out, char(s));
     return out;
   }
 
@@ -60,19 +52,15 @@ function parseArray(s) {
   if (char(s) !== "]") bail(s, "parseArray end");
   advance(s);
 
-  log("Array out:", out, char(s));
   return out;
 }
 
-// here
 function parseObject(s) {
-  log("Object in:", xray(s));
   if (char(s) !== "{") bail(s, "parseObject");
   advance(s);
 
   let out = {};
 
-  // Maybe member
   while (true) {
     consumeWhiteSpace(s);
     if (char(s) !== '"') break;
@@ -103,13 +91,12 @@ function parseObject(s) {
   }
 
   if (char(s) !== "}") bail(s, "parseObject");
+
   advance(s);
-  log("Object out:", out);
   return out;
 }
 
 function parseString(s) {
-  // log("String in:", xray(s));
   if (char(s) !== '"') bail(s, "parseString");
   advance(s);
 
@@ -128,7 +115,6 @@ function parseString(s) {
   while (char(s) !== '"') {
     if (char(s) === "\\") {
       advance(s);
-      log(`switch '${char(s)}'`);
       const replacement = scape[char(s)];
       if (replacement === undefined) {
         bail(s, "parseString");
@@ -139,39 +125,37 @@ function parseString(s) {
     }
     advance(s);
   }
+
   advance(s);
-  // log("String out: ", out);
   return out;
 }
 
 function parseNumber(s) {
-  log("Number", char(s), s);
   const onenineDigits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-  let str = "";
+  let out = "";
 
   // Maybe negative number
-  if (char(s) === "-") str += take(s);
+  if (char(s) === "-") out += take(s);
 
   // Next char must be a digit
   if (!isDigit(char(s))) bail(s, "parseNumber");
 
-  str += take(s);
+  out += take(s);
 
   // TODO: If first digit is zero, next char can't be digit
-  while (isDigit(char(s))) str += take(s);
+  while (isDigit(char(s))) out += take(s);
 
   // Fraction
   if (char(s) === ".") {
-    str += take(s);
+    out += take(s);
     if (!isDigit(char(s))) bail(s, "parseNumber");
-    while (isDigit(char(s))) str += take(s);
+    while (isDigit(char(s))) out += take(s);
   }
 
-  const out = Number(str);
-
-  log("Number", { out, s });
-  return out;
+  return Number(out);
 }
+
+// Helpers ******************************************
 
 function take(s) {
   const c = char(s);
@@ -190,15 +174,12 @@ function consumeToken(s, token, returnValue = null) {
   return returnValue;
 }
 
-// Helpers
 function char(s) {
-  // log("char", s);
   return s.input[s.position];
 }
 
 function advance(s) {
   s.position++;
-  log(`advance: '${char(s)}'`);
   return char(s);
 }
 
@@ -218,15 +199,18 @@ function isDigit(c) {
   return ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].includes(c);
 }
 
+// Debugging
+
+function log() {
+  console.log.apply(console, arguments);
+}
+
 function xray(s) {
   return { around: s.input.slice(s.position, 20), position: s.position };
 }
 
+// Exports
+
 module.exports = {
   parse,
 };
-
-// Debugging
-function log() {
-  // console.log.apply(console, arguments);
-}

@@ -1,5 +1,5 @@
 // https://nodejs.org/api/assert.html
-
+const fs = require("fs");
 const assert = require("assert/strict");
 const Parser = require("./parser");
 
@@ -7,9 +7,24 @@ const testFilter = process.argv[2];
 if (testFilter) {
   console.log(`Filter by: ${testFilter}`);
 }
-console.log;
 
-const tests = [
+function runTest({ what, input }) {
+  // Run specific test
+  if (testFilter && !what.includes(testFilter)) {
+    console.log(`Skipped: ${what}`);
+    return;
+  }
+
+  try {
+    const actual = Parser.parse(input);
+    assert.deepEqual(actual, JSON.parse(input));
+    console.log(`✅ ${what}`);
+  } catch (error) {
+    console.error(`❌ ${what}`, error);
+  }
+}
+
+const simpleTests = [
   // Empty value
   {
     what: "Empty Array",
@@ -98,17 +113,15 @@ const tests = [
   },
 ];
 
-tests.forEach(({ what, input, expected }) => {
-  // Run specific test
-  if (testFilter && !what.includes(testFilter)) {
-    return;
-  }
+simpleTests.forEach(runTest);
 
-  try {
-    const actual = Parser.parse(input);
-    assert.deepEqual(actual, JSON.parse(input));
-    console.log(`✅ ${what}`);
-  } catch (error) {
-    console.error(`❌ ${what}`, error);
-  }
-});
+// Grab example json files
+const exampleTests = fs
+  .readdirSync(".")
+  .filter((f) => /^t\..*json/.exec(f))
+  .map((what) => {
+    const input = fs.readFileSync(what).toString();
+    return { what, input };
+  });
+
+exampleTests.forEach(runTest);
