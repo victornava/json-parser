@@ -155,7 +155,7 @@ function parseNumber(s) {
   return Number(out);
 }
 
-// Helpers ******************************************
+// Helpers
 
 function take(s) {
   const c = char(s);
