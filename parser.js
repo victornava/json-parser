@@ -25,7 +25,7 @@ function parseValue(s) {
   if (c === "[") return parseArray(s);
   if (c === "{") return parseObject(s);
   if (c === '"') return parseString(s);
-  if ("0123456789".includes(c)) return parseNumber(s);
+  if (c === "-" || isDigit(c)) return parseNumber(s);
   if (c === "t") return consumeToken(s, "true", true);
   if (c === "f") return consumeToken(s, "false", false);
   if (c === "n") return consumeToken(s, "null", null);
@@ -116,18 +116,37 @@ function parseString(s) {
 
 function parseNumber(s) {
   log("Number", char(s), s);
+  const onenineDigits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+  let str = "";
 
-  if (!"0123456789".includes(char(s))) bail(s, "parseNumber");
+  // Maybe negative number
+  if (char(s) === "-") str += take(s);
 
-  let out = Number(char(s));
+  // Next char must be a digit
+  if (!isDigit(char(s))) bail(s, "parseNumber");
 
-  advance(s);
+  str += take(s);
 
-  // TODO: while
+  // TODO: If first digit is zero, next char can't be digit
+  while (isDigit(char(s))) str += take(s);
+
+  // Fraction
+  if (char(s) === ".") {
+    str += take(s);
+    if (!isDigit(char(s))) bail(s, "parseNumber");
+    while (isDigit(char(s))) str += take(s);
+  }
+
+  const out = Number(str);
 
   log("Number", { out, s });
-
   return out;
+}
+
+function take(s) {
+  const c = char(s);
+  advance(s);
+  return c;
 }
 
 function consumeToken(s, token, returnValue = null) {
@@ -163,6 +182,10 @@ function bail(s, parseFn) {
   throw `ERROR: Unexpected char '${char(s)}' at position '${
     s.position
   }' while parsing ${parseFn}`;
+}
+
+function isDigit(c) {
+  return ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].includes(c);
 }
 
 function xray(s) {

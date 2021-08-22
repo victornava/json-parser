@@ -7,8 +7,8 @@ TODO
 - [x] Elements
 - [x] Empty values
 - [x] Strings
-- [ ] Numbers: Integers
-- [ ] Arrays
+- [x] Numbers integers, fractions
+- [x] Arrays
 - [ ] Objects
 
 Non-Goal
@@ -16,6 +16,7 @@ Non-Goal
 # References
 
 - https://www.json.org/json-en.html
+
 - https://datatracker.ietf.org/doc/html/rfc8259
 
 # Grammar

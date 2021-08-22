@@ -70,6 +70,23 @@ const tests = [
     what: "Array nested",
     input: "[[1, [2, [3]]]]",
   },
+  // Number
+  {
+    what: "Number positive integer",
+    input: "1984",
+  },
+  {
+    what: "Number negative integer",
+    input: "-37",
+  },
+  {
+    what: "Number positive with fraction",
+    input: "3.14",
+  },
+  {
+    what: "Number negative with fraction",
+    input: "-0.97463",
+  },
 ];
 
 tests.forEach(({ what, input, expected }) => {
