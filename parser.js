@@ -13,7 +13,7 @@ function parse(jsonStr) {
 
 // Element: ws value ws
 function parseElement(s) {
-  // log("Element", xray(s));
+  log("Element", xray(s));
   consumeWhiteSpace(s);
   const out = parseValue(s);
   consumeWhiteSpace(s);
@@ -21,6 +21,7 @@ function parseElement(s) {
 }
 
 function parseValue(s) {
+  log("Value", xray(s));
   const c = char(s);
   if (c === "[") return parseArray(s);
   if (c === "{") return parseObject(s);
@@ -63,6 +64,7 @@ function parseArray(s) {
   return out;
 }
 
+// here
 function parseObject(s) {
   log("Object in:", xray(s));
   if (char(s) !== "{") bail(s, "parseObject");
@@ -70,7 +72,35 @@ function parseObject(s) {
 
   let out = {};
 
-  // TODO
+  // Maybe member
+  while (true) {
+    consumeWhiteSpace(s);
+    if (char(s) !== '"') break;
+
+    // Key
+    let key = parseString(s);
+
+    // Bail is key is duplicate
+    if (out.hasOwnProperty(key)) bail(s, "parseObject");
+
+    // ":"
+    consumeWhiteSpace(s);
+    if (char(s) !== ":") bail(s, "parseObject");
+    advance(s);
+
+    // Value
+    let value = parseElement(s);
+
+    // Add element
+    out[key] = value;
+
+    // More elements?
+    if (char(s) === ",") {
+      advance(s); // Keep going
+    } else {
+      break; // We're done
+    }
+  }
 
   if (char(s) !== "}") bail(s, "parseObject");
   advance(s);
@@ -168,7 +198,7 @@ function char(s) {
 
 function advance(s) {
   s.position++;
-  // log(`advance: '${char(s)}'`);
+  log(`advance: '${char(s)}'`);
   return char(s);
 }
 

@@ -9,7 +9,7 @@ TODO
 - [x] Strings
 - [x] Numbers integers, fractions
 - [x] Arrays
-- [ ] Objects
+- [x] Objects
 
 Non-Goal
 

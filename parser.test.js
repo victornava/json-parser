@@ -57,7 +57,7 @@ const tests = [
     what: "String scapemagedon",
     input: `"A \\",\\n,\\r\\t\\b\\f\\/B"`,
   },
-  // Array Simple
+  // Array
   {
     what: "Array numbers",
     input: "[1, 2, 3]",
@@ -86,6 +86,15 @@ const tests = [
   {
     what: "Number negative with fraction",
     input: "-0.97463",
+  },
+  // Object
+  {
+    what: "Object flat",
+    input: `{ "type": "Beer", "style": "IPA", "name": "Hopster", "price": 10, "inStock": true }`,
+  },
+  {
+    what: "Object nested",
+    input: `{ "a": { "b": { "c": "OK" } } }`,
   },
 ];
 
