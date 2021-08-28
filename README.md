@@ -1,16 +1,15 @@
 # JSON Parser
 
-A simple JSON parser written in JavaScript. Just to understand how parsers work.
+A basic JSON parser written in JavaScript. Just to understand how parsers work.
 
 # TODO
 
 - [x] Elements
 - [x] Empty values
 - [x] Strings
-- [x] Numbers integers, fractions
+- [x] Numbers
 - [x] Arrays
 - [x] Objects
-- [ ] Handle error cases
 
 # Approach
 

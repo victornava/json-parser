@@ -21,94 +21,78 @@ function parseValue(s) {
   if (c === "{") return parseObject(s);
   if (c === '"') return parseString(s);
   if (c === "-" || isDigit(c)) return parseNumber(s);
-  if (c === "t") return consumeToken(s, "true", true);
-  if (c === "f") return consumeToken(s, "false", false);
-  if (c === "n") return consumeToken(s, "null", null);
+  if (c === "t") return parseToken(s, "true", true);
+  if (c === "f") return parseToken(s, "false", false);
+  if (c === "n") return parseToken(s, "null", null);
   bail(s, "parseValue");
 }
 
 function parseArray(s) {
-  if (char(s) !== "[") bail(s, "parseArray start");
-  advance(s);
+  char(s) === "[" ? advance(s) : bail(s, "parseArray");
   consumeWhiteSpace(s);
 
   const out = [];
 
-  // Empty: '[' ws ']'
   if (char(s) === "]") {
     advance(s);
-    return out;
+    return [];
   }
 
-  // One: element
   out.push(parseElement(s));
-
-  // Many: element ',' elements
   while (char(s) === ",") {
     advance(s);
     out.push(parseElement(s));
   }
 
-  if (char(s) !== "]") bail(s, "parseArray end");
-  advance(s);
-
+  char(s) === "]" ? advance(s) : bail(s, "parseArray")
   return out;
 }
 
 function parseObject(s) {
-  if (char(s) !== "{") bail(s, "parseObject");
-  advance(s);
+  char(s) === "{" ? advance(s) : bail(s, "parseObject");
 
-  let out = {};
+  const out = {};
 
   while (true) {
     consumeWhiteSpace(s);
-    if (char(s) !== '"') break;
 
-    // Key
-    let key = parseString(s);
+    if (char(s) !== '"')
+      break;
 
-    // Bail is key is duplicate
-    if (out.hasOwnProperty(key)) bail(s, "parseObject");
+    const key = parseString(s);
 
-    // ":"
+    if (out.hasOwnProperty(key))
+      bail(s, "parseObject");
+
     consumeWhiteSpace(s);
-    if (char(s) !== ":") bail(s, "parseObject");
-    advance(s);
+    char(s) === ":" ? advance(s) : bail(s, "parseObject");
 
-    // Value
-    let value = parseElement(s);
-
-    // Add element
+    const value = parseElement(s);
     out[key] = value;
 
-    // More elements?
     if (char(s) === ",") {
-      advance(s); // Keep going
+      advance(s);
     } else {
-      break; // We're done
+      break;
     }
   }
 
-  if (char(s) !== "}") bail(s, "parseObject");
-
-  advance(s);
+  char(s) === "}" ? advance(s) : bail(s, "parseObject");
   return out;
 }
 
 function parseString(s) {
-  if (char(s) !== '"') bail(s, "parseString");
-  advance(s);
+  char(s) === '"' ? advance(s) : bail(s, "parseString");
 
   let out = "";
 
   const scape = {
     '"': '"',
-    n: "\n",
-    r: "\r",
-    t: "\t",
-    b: "\b",
-    f: "\f",
+    "n": "\n",
+    "r": "\r",
+    "t": "\t",
+    "b": "\b",
+    "f": "\f",
     "/": "/",
   };
 
@@ -116,9 +100,8 @@ function parseString(s) {
     if (char(s) === "\\") {
       advance(s);
       const replacement = scape[char(s)];
-      if (replacement === undefined) {
+      if (replacement === undefined)
         bail(s, "parseString");
-      }
       out += replacement;
     } else {
       out += char(s);
@@ -134,10 +117,12 @@ function parseNumber(s) {
   let out = "";
 
   // Maybe negative number
-  if (char(s) === "-") out += take(s);
+  if (char(s) === "-")
+    out += take(s);
 
   // Next char must be a digit
-  if (!isDigit(char(s))) bail(s, "parseNumber");
+  if (!isDigit(char(s)))
+    bail(s, "parseNumber");
 
   out += take(s);
 
@@ -147,8 +132,13 @@ function parseNumber(s) {
   // Fraction
   if (char(s) === ".") {
     out += take(s);
-    if (!isDigit(char(s))) bail(s, "parseNumber");
-    while (isDigit(char(s))) out += take(s);
+
+    if (!isDigit(char(s)))
+      bail(s, "parseNumber");
+
+    while (isDigit(char(s))) {
+      out += take(s)
+    };
   }
 
   return Number(out);
@@ -162,13 +152,9 @@ function take(s) {
   return c;
 }
 
-function consumeToken(s, token, returnValue = null) {
+function parseToken(s, token, returnValue) {
   for (c of token) {
-    if (c === char(s)) {
-      advance(s);
-    } else {
-      bail(s);
-    }
+    c === char(s) ? advance(s) : bail(s, `parseToken '${token}'`)
   }
   return returnValue;
 }
@@ -189,9 +175,7 @@ function consumeWhiteSpace(s) {
 }
 
 function bail(s, parseFn) {
-  throw `ERROR: Unexpected char '${char(s)}' at position '${
-    s.position
-  }' while parsing ${parseFn}`;
+  throw `ERROR: Unexpected char '${char(s)}' at position '${s.position}' while parsing ${parseFn}`;
 }
 
 function isDigit(c) {
@@ -199,14 +183,13 @@ function isDigit(c) {
 }
 
 // Debugging
-
-function log() {
-  console.log.apply(console, arguments);
-}
-
-function xray(s) {
-  return { around: s.input.slice(s.position, 20), position: s.position };
-}
+// function log() {
+//   console.log.apply(console, arguments);
+// }
+//
+// function xray(s) {
+//   return { around: s.input.slice(s.position, 20), position: s.position };
+// }
 
 // Exports
 
